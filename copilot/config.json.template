@@ -1,0 +1,24 @@
+{
+  "banner": "never",
+  "render_markdown": true,
+  "screen_reader": false,
+  "theme": "auto",
+  "model": "claude-sonnet-4.6",
+  "reasoning_effort": "high",
+  "marketplaces": {
+    "work-iq": {
+      "source": {
+        "source": "github",
+        "repo": "microsoft/work-iq"
+      }
+    }
+  },
+  "installed_plugins": [
+    {
+      "name": "workiq",
+      "marketplace": "work-iq",
+      "version": "1.0.0",
+      "enabled": true
+    }
+  ]
+}

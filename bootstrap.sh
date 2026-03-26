@@ -46,7 +46,34 @@ fi
 ln -sf "$DOTFILES_DIR/ssh/config" ~/.ssh/config
 chmod 600 ~/.ssh/config
 
-# ── 4. gh CLI auth ────────────────────────────────────────────────────────────
+# ── 4. bash custom config ────────────────────────────────────────────────────
+info "Linking ~/.bashrc_custom..."
+ln -sf "$DOTFILES_DIR/bash/.bashrc_custom" ~/.bashrc_custom
+
+if ! grep -q 'bashrc_custom' ~/.bashrc 2>/dev/null; then
+  info "Appending source line to ~/.bashrc..."
+  echo '' >> ~/.bashrc
+  echo '# dotfiles: personal additions' >> ~/.bashrc
+  echo '[ -f ~/.bashrc_custom ] && source ~/.bashrc_custom' >> ~/.bashrc
+fi
+
+if [[ ! -f ~/.bashrc.local ]]; then
+  warn "No ~/.bashrc.local found. Creating from template — edit it with machine-specific paths."
+  cp "$DOTFILES_DIR/bash/.bashrc.local.template" ~/.bashrc.local
+fi
+
+# ── 5. Copilot CLI config ─────────────────────────────────────────────────────
+info "Setting up ~/.copilot/config.json..."
+mkdir -p ~/.copilot
+if [[ ! -f ~/.copilot/config.json ]]; then
+  cp "$DOTFILES_DIR/copilot/config.json.template" ~/.copilot/config.json
+  info "  Copilot config written. Run 'gh copilot' once to authenticate."
+else
+  warn "~/.copilot/config.json already exists — skipping (won't overwrite live tokens)."
+  warn "  Review $DOTFILES_DIR/copilot/config.json.template for any new preferences."
+fi
+
+# ── 6. gh CLI auth ────────────────────────────────────────────────────────────
 # Copy the hosts template so gh knows which accounts exist (no tokens yet)
 info "Setting up gh CLI config structure..."
 mkdir -p ~/.config/gh

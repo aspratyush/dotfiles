@@ -1,0 +1,36 @@
+# ~/.bashrc.local — machine-specific overrides
+# Copy from dotfiles/bash/.bashrc.local.template and fill in paths for this machine.
+# This file is NOT committed to dotfiles.
+
+# ── CUDA ──────────────────────────────────────────────────────────────────────
+# export PATH=$PATH:/usr/local/cuda-XX.X/bin
+# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-XX.X/lib64
+# export CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:/usr/local/cuda-XX.X/include
+
+# ── NVIDIA packages (from a specific venv) ────────────────────────────────────
+# NVIDIA_PACKAGE_DIR=$HOME/"workspace/venv/<venv>/lib/python3.XX/site-packages/nvidia"
+# for dir in $NVIDIA_PACKAGE_DIR/*; do
+#     [ -d "$dir/lib" ] && export LD_LIBRARY_PATH="$dir/lib:$LD_LIBRARY_PATH"
+# done
+
+# ── Python / conda envs ───────────────────────────────────────────────────────
+# alias conda_activate='eval "$(<path-to-miniconda>/bin/conda shell.bash hook)"'
+# . <path-to-venv>/bin/activate
+
+# ── SM internal tools ─────────────────────────────────────────────────────────
+# source <fovio_tools-path>/activate
+# alias sm_setenv_bazel='source <researchjunction-path>/pytools/setenv_bazel.sh'
+# alias eod2json='<bazel-bin-path>/projects/guardian/tools/eod2json/eod2json'
+# alias bazel='$HOME/.bin/bazel'
+# export SM_LAVA_CRED=~/.lavacred
+
+# ── TIDL ──────────────────────────────────────────────────────────────────────
+# export SOC=am62a
+# export TIDL_TOOLS_PATH=<tidl-tools-path>
+# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$TIDL_TOOLS_PATH
+
+# ── Tools at non-standard paths ───────────────────────────────────────────────
+# alias nvim='<path-to-nvim.appimage>'
+
+# ── uv / cargo env ───────────────────────────────────────────────────────────
+# . "$HOME/.local/bin/env"

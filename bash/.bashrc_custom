@@ -1,0 +1,55 @@
+# ~/.bashrc_custom — personal additions, sourced from ~/.bashrc
+# Managed via dotfiles: https://git.onsm.cloud/pratyush-sahay/dotfiles
+
+# ── Prompt ────────────────────────────────────────────────────────────────────
+parse_git_branch() {
+    git branch 2>/dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/'
+}
+PS1='\[\033[01;32m\]\u@\h:\[\033[00;45m\]${PWD#"${PWD%/*}/"} \[\033[00m\]\[\033[01;31m\]$(parse_git_branch)\[\033[00m\]\$ '
+
+# ── Git aliases ───────────────────────────────────────────────────────────────
+alias gitc='git commit -m'
+alias gits='git status'
+alias gita='git add'
+alias gitl='git log'
+alias gitr='git rebase origin/master'
+alias gitrl='git reflog'
+alias gitlol='git log --pretty=oneline'
+alias gitunstage='git restore --staged'
+
+# ── Utility aliases ───────────────────────────────────────────────────────────
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias gnr='grep -inR'
+alias b-tmux='byobu-tmux'
+alias rcp='rsync --info=progress2'
+alias rcpdel='rsync --info=progress2 -anzPL'
+alias lru_files="TZ=UTC0 find . -mindepth 2 -type f -printf '%TFZ%TT/%P\0' | LC_ALL=C sort -zt/ -k2,2 -k1,1r | LC_ALL=C sort -t/ -zmsuk2,2 | LC_ALL=C sort -z | tr '\0' '\n'"
+
+# ── Docker aliases ────────────────────────────────────────────────────────────
+alias docker_prune="docker image prune -f"
+alias docker_rm_dangling="docker images -f 'dangling=true'"
+
+# ── Functions ─────────────────────────────────────────────────────────────────
+list_files() {
+    find "$1" -type f -printf "%s\t%p\n" | sort -n
+}
+
+pdfcompress() {
+    gs -q -dNOPAUSE -dBATCH -dSAFER -sDEVICE=pdfwrite \
+       -dCompatibilityLevel=1.4 -dPDFSETTINGS=/"$1" \
+       -dEmbedAllFonts=true -dSubsetFonts=true \
+       -dColorImageDownsampleType=/Bicubic -dColorImageResolution=144 \
+       -dGrayImageDownsampleType=/Bicubic  -dGrayImageResolution=64 \
+       -dMonoImageDownsampleType=/Bicubic  -dMonoImageResolution=144 \
+       -sOutputFile="${2%.*}.compressed.pdf" "$2"
+}
+
+# ── fzf ───────────────────────────────────────────────────────────────────────
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+# ── Machine-specific overrides ────────────────────────────────────────────────
+# CUDA paths, venv activations, mounted tool paths etc. go in ~/.bashrc.local
+# (not committed — create from bash/.bashrc.local.template in dotfiles)
+[ -f ~/.bashrc.local ] && source ~/.bashrc.local
