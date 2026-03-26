@@ -1,0 +1,20 @@
+# gh CLI hosts template — tokens are NOT stored here.
+# Run bootstrap.sh to populate tokens via `gh auth login`.
+#
+# Accounts:
+#   git.onsm.cloud  → pratyush-sahay          (GHES / internal)
+#   github.com      → pratyush-sahay_enid      (seeing-machines-emu org)
+#   github.com      → aspratyush               (personal)
+
+git.onsm.cloud:
+    users:
+        pratyush-sahay: {}
+    git_protocol: ssh
+    user: pratyush-sahay
+
+github.com:
+    users:
+        pratyush-sahay_enid: {}
+        aspratyush: {}
+    git_protocol: ssh
+    user: pratyush-sahay_enid    # default active account for seeing-machines-emu work

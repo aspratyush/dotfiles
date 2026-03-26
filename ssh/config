@@ -1,0 +1,99 @@
+# ── GPU cluster (internal) ────────────────────────────────────────────────────
+Host gpu-1
+  HostName mlcv-gpu-1-act.sm.local
+  User pratyush.sahay
+
+Host gpu-2
+  HostName mlcv-gpu-2-act.sm.local
+  User pratyush.sahay
+
+Host gpu-3
+  HostName mlcv-gpu-3-act.sm.local
+  User pratyush.sahay
+
+Host gpu-4
+  HostName mlcv-gpu-4-act.sm.local
+  User pratyush.sahay
+
+Host gpu-5
+  HostName mlcv-gpu-5-act.sm.local
+  User pratyush.sahay
+
+Host gpu-6
+  HostName mlcv-gpu-6-act.sm.local
+  User pratyush.sahay
+
+Host gpu-7
+  HostName mlcv-gpu-7-act.sm.local
+  User pratyush.sahay
+
+Host gpu-8
+  HostName mlcv-gpu-8-act.sm.local
+  User pratyush.sahay
+
+Host gpu-9
+  HostName mlcv-gpu-9-act.sm.local
+  User pratyush.sahay
+
+Host gpu-10
+  HostName mlcv-gpu-10-act.sm.local
+  User pratyush.sahay
+
+Host gpu-11
+  HostName mlcv-gpu-11-act.sm.local
+  User pratyush.sahay
+
+Host gpu-12
+  HostName mlcv-gpu-12-act.sm.local
+  User pratyush.sahay
+
+Host gpu-13
+  HostName mlcv-gpu-13-act.sm.local
+  User pratyush.sahay
+
+Host gpu-14
+  HostName mlcv-gpu-14-act.sm.local
+  User pratyush.sahay
+
+#Host gpu-15
+#  HostName mlcv-gpu-15-act.sm.local
+#  User pratyush.sahay
+
+#Host gpu-16
+#  HostName mlcv-gpu-16-act.sm.local
+#  User pratyush.sahay
+
+Host gpu-17
+  HostName mlcv-gpu-17-act.sm.local
+  User pratyush.sahay
+
+Host gpu-18
+  HostName mlcv-gpu-18-act.sm.local
+  User pratyush.sahay
+
+Host gpu-ext-1
+  HostName mlcv-gpu-ext-1-act.sm.local
+  User pratyush.sahay
+
+Host gpu-ext-2
+  HostName mlcv-gpu-ext-2-act.sm.local
+  User pratyush.sahay
+
+Host gpu-ext-3
+  HostName mlcv-gpu-ext-3-act.sm.local
+  User pratyush.sahay
+
+Host gpu-ext-4
+  HostName mlcv-gpu-ext-4-act.sm.local
+  User pratyush.sahay
+
+Host gpu-ext-5
+  HostName mlcv-gpu-ext-5-act.sm.local
+  User pratyush.sahay
+
+# ── GitHub (personal account, separate SSH key) ───────────────────────────────
+Host github-aspratyush
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519
+  IdentitiesOnly yes

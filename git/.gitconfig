@@ -1,0 +1,19 @@
+[user]
+	name = Pratyush Sahay
+	email = pratyush.sahay@seeingmachines.com
+
+[filter "lfs"]
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+
+[core]
+	editor = vim
+	autocrlf = input
+
+[pull]
+	rebase = false
+
+[init]
+	defaultBranch = main
