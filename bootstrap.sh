@@ -27,7 +27,23 @@ else
   git lfs install
 fi
 
-# ── 2. git config ─────────────────────────────────────────────────────────────
+# ── 2. git identity (~/.gitconfig.local, never committed) ────────────────────
+if [[ ! -f ~/.gitconfig.local ]]; then
+  info "Setting up git identity in ~/.gitconfig.local (not committed)..."
+  read -rp "  Git name  [Pratyush Sahay]: " GIT_NAME
+  read -rp "  Git email []: " GIT_EMAIL
+  GIT_NAME="${GIT_NAME:-Pratyush Sahay}"
+  cat > ~/.gitconfig.local << LOCALEOF
+[user]
+\tname = ${GIT_NAME}
+\temail = ${GIT_EMAIL}
+LOCALEOF
+  info "  Written to ~/.gitconfig.local"
+else
+  info "~/.gitconfig.local already exists — skipping identity prompt."
+fi
+
+# ── 3. git config ─────────────────────────────────────────────────────────────
 info "Linking ~/.gitconfig..."
 if [[ -f ~/.gitconfig && ! -L ~/.gitconfig ]]; then
   warn "~/.gitconfig already exists (not a symlink). Backing up to ~/.gitconfig.bak"
