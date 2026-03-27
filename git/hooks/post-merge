@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# git/hooks/post-merge
+# After every `git pull` / merge into local master, push to the github.com mirror.
+# Installed by bootstrap.sh into .git/hooks/post-merge
+
+DOTFILES_DIR="$(git rev-parse --show-toplevel)"
+LOG="$HOME/.local/log/dotfiles-mirror.log"
+mkdir -p "$(dirname "$LOG")"
+
+log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
+
+if ! git -C "$DOTFILES_DIR" remote get-url mirror &>/dev/null; then
+  log "SKIP: 'mirror' remote not configured."
+  exit 0
+fi
+
+LOCAL=$(git -C "$DOTFILES_DIR" rev-parse HEAD)
+MIRROR=$(git -C "$DOTFILES_DIR" ls-remote mirror HEAD 2>/dev/null | awk '{print $1}')
+
+if [[ "$LOCAL" == "$MIRROR" ]]; then
+  log "Mirror already up to date ($LOCAL)."
+  exit 0
+fi
+
+log "post-merge: syncing mirror ($MIRROR -> $LOCAL)..."
+git -C "$DOTFILES_DIR" push mirror --all >> "$LOG" 2>&1 && \
+  log "Mirror sync OK." || \
+  log "ERROR: mirror sync failed — check $LOG"

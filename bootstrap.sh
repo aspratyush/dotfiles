@@ -101,9 +101,26 @@ gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key
 info "Setting pratyush-sahay_enid as active github.com account..."
 gh auth switch --hostname github.com --user pratyush-sahay_enid
 
+# ── 7. Mirror remote + post-merge hook ───────────────────────────────────────
+info "Configuring github.com mirror remote..."
+if git -C "$DOTFILES_DIR" remote get-url mirror &>/dev/null; then
+  warn "  'mirror' remote already exists — skipping."
+else
+  git -C "$DOTFILES_DIR" remote add mirror git@github-aspratyush:aspratyush/dotfiles.git
+  info "  Added mirror → git@github-aspratyush:aspratyush/dotfiles.git"
+fi
+
+info "Installing post-merge hook..."
+chmod +x "$DOTFILES_DIR/git/hooks/post-merge"
+ln -sf "$DOTFILES_DIR/git/hooks/post-merge" "$DOTFILES_DIR/.git/hooks/post-merge"
+info "  Hook installed: .git/hooks/post-merge"
+
 info ""
 info "✅ Done! Verify with: gh auth status"
 info ""
 info "To switch github.com accounts:"
 info "  gh auth switch --hostname github.com --user pratyush-sahay_enid  # org work"
 info "  gh auth switch --hostname github.com --user aspratyush            # personal"
+info ""
+info "Mirror: every 'git pull' on master will auto-push to github.com/aspratyush/dotfiles"
+info "  Log: ~/.local/log/dotfiles-mirror.log"
