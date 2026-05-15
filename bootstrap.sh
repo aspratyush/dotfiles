@@ -9,15 +9,61 @@ GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 info()  { echo -e "${GREEN}[dotfiles]${NC} $*"; }
 warn()  { echo -e "${YELLOW}[dotfiles]${NC} $*"; }
 
-# ── 1. Check dependencies ─────────────────────────────────────────────────────
-for cmd in git gh; do
-  if ! command -v "$cmd" &>/dev/null; then
-    warn "$cmd not found — please install it first."
-    warn "  git:  https://git-scm.com/downloads"
-    warn "  gh:   https://cli.github.com"
-    exit 1
+# ── 0. Install gh locally if not available ───────────────────────────────────
+install_gh_local() {
+  local install_dir="$HOME/.local/bin"
+  local os arch tmp_dir version tarball_url
+
+  info "gh not found in PATH — installing locally to $install_dir (no sudo)..."
+
+  case "$(uname -s)" in
+    Linux)  os="linux"  ;;
+    Darwin) os="macOS"  ;;
+    *)      warn "Unsupported OS: $(uname -s). Install gh manually: https://cli.github.com"; return 1 ;;
+  esac
+
+  case "$(uname -m)" in
+    x86_64)        arch="amd64" ;;
+    aarch64|arm64) arch="arm64" ;;
+    *)             warn "Unsupported arch: $(uname -m). Install gh manually: https://cli.github.com"; return 1 ;;
+  esac
+
+  version=$(curl -fsSL "https://api.github.com/repos/cli/cli/releases/latest" \
+    | grep '"tag_name"' | sed 's/.*"v\([^"]*\)".*/\1/')
+  if [[ -z "$version" ]]; then
+    warn "Could not determine latest gh version. Install gh manually: https://cli.github.com"
+    return 1
   fi
-done
+
+  tarball_url="https://github.com/cli/cli/releases/download/v${version}/gh_${version}_${os}_${arch}.tar.gz"
+  tmp_dir=$(mktemp -d)
+
+  info "  Downloading gh v${version} (${os}/${arch})..."
+  if ! curl -fsSL "$tarball_url" | tar -xz -C "$tmp_dir"; then
+    warn "Download or extraction failed. Install gh manually: https://cli.github.com"
+    rm -rf "$tmp_dir"
+    return 1
+  fi
+
+  mkdir -p "$install_dir"
+  cp "$tmp_dir/gh_${version}_${os}_${arch}/bin/gh" "$install_dir/gh"
+  chmod +x "$install_dir/gh"
+  rm -rf "$tmp_dir"
+
+  info "  gh v${version} installed to $install_dir/gh"
+  info "  Add $install_dir to your PATH to use it in future sessions."
+  export PATH="$install_dir:$PATH"
+}
+
+# ── 1. Check dependencies ─────────────────────────────────────────────────────
+if ! command -v git &>/dev/null; then
+  warn "git not found — please install it first: https://git-scm.com/downloads"
+  exit 1
+fi
+
+if ! command -v gh &>/dev/null; then
+  install_gh_local || exit 1
+fi
 
 if ! command -v git-lfs &>/dev/null; then
   warn "git-lfs not found. Install with: sudo apt install git-lfs  (or brew install git-lfs)"
@@ -31,16 +77,29 @@ fi
 if [[ ! -f ~/.gitconfig.local ]]; then
   info "Setting up git identity in ~/.gitconfig.local (not committed)..."
   read -rp "  Git name  [Pratyush Sahay]: " GIT_NAME
-  read -rp "  Git email []: " GIT_EMAIL
   GIT_NAME="${GIT_NAME:-Pratyush Sahay}"
-  cat > ~/.gitconfig.local << LOCALEOF
-[user]
-\tname = ${GIT_NAME}
-\temail = ${GIT_EMAIL}
-LOCALEOF
-  info "  Written to ~/.gitconfig.local"
+
+  read -rp "  Personal email (github.com / gmail): " GIT_EMAIL_PERSONAL
+  read -rp "  Work email (git.onsm.cloud + github.com/seeing-machines-emu) [leave blank to skip]: " GIT_EMAIL_WORK
+
+  printf '[user]\n\tname = %s\n\temail = %s\n' "${GIT_NAME}" "${GIT_EMAIL_PERSONAL}" > ~/.gitconfig.local
+  info "  Written to ~/.gitconfig.local (personal identity)"
+
+  if [[ -n "$GIT_EMAIL_WORK" ]]; then
+    printf '[user]\n\tname = %s\n\temail = %s\n' "${GIT_NAME}" "${GIT_EMAIL_WORK}" > ~/.gitconfig.work
+    info "  Written to ~/.gitconfig.work (work identity)"
+    info "  Tip: add an [includeIf \"gitdir:~/path/to/work/\"] block in ~/.gitconfig.local to auto-apply it."
+  fi
 else
   info "~/.gitconfig.local already exists — skipping identity prompt."
+  _pname=$(git config --file ~/.gitconfig.local user.name  2>/dev/null || echo "(not set)")
+  _pemail=$(git config --file ~/.gitconfig.local user.email 2>/dev/null || echo "(not set)")
+  info "  Personal identity: ${_pname} <${_pemail}>"
+  if [[ -f ~/.gitconfig.work ]]; then
+    _wname=$(git config --file ~/.gitconfig.work user.name  2>/dev/null || echo "(not set)")
+    _wemail=$(git config --file ~/.gitconfig.work user.email 2>/dev/null || echo "(not set)")
+    info "  Work identity:     ${_wname} <${_wemail}>"
+  fi
 fi
 
 # ── 3. git config ─────────────────────────────────────────────────────────────
@@ -50,7 +109,9 @@ if [[ -f ~/.gitconfig && ! -L ~/.gitconfig ]]; then
   mv ~/.gitconfig ~/.gitconfig.bak
 fi
 ln -sf "$DOTFILES_DIR/git/.gitconfig" ~/.gitconfig
-info "  → $(git config user.name) <$(git config user.email)>"
+_cname=$(git config user.name  2>/dev/null || echo "(not set)")
+_cemail=$(git config user.email 2>/dev/null || echo "(not set)")
+info "  → ${_cname} <${_cemail}>"
 
 # ── 3. SSH config ─────────────────────────────────────────────────────────────
 info "Linking ~/.ssh/config..."
@@ -74,8 +135,12 @@ if ! grep -q 'bashrc_custom' ~/.bashrc 2>/dev/null; then
 fi
 
 if [[ ! -f ~/.bashrc.local ]]; then
-  warn "No ~/.bashrc.local found. Creating from template — edit it with machine-specific paths."
-  cp "$DOTFILES_DIR/bash/.bashrc.local.template" ~/.bashrc.local
+  if [[ -f "$DOTFILES_DIR/bash/.bashrc.local.template" ]]; then
+    warn "No ~/.bashrc.local found. Creating from template — edit it with machine-specific paths."
+    cp "$DOTFILES_DIR/bash/.bashrc.local.template" ~/.bashrc.local
+  else
+    warn "No ~/.bashrc.local found and template missing — skipping."
+  fi
 fi
 
 # ── 5. Copilot CLI config ─────────────────────────────────────────────────────
@@ -89,12 +154,26 @@ else
   warn "  Review $DOTFILES_DIR/copilot/config.json.template for any new preferences."
 fi
 
+# Returns 0 if the given user is already authenticated on the given hostname.
+# Captures gh output first (with || true) so pipefail can't fire on gh's exit code.
+gh_logged_in() {
+  local hostname="$1" user="$2"
+  local status_out
+  status_out=$(gh auth status --hostname "$hostname" 2>&1) || true
+  echo "$status_out" | grep -q "account $user"
+}
+
 # ── 6. gh CLI auth ────────────────────────────────────────────────────────────
 # Copy the hosts template so gh knows which accounts exist (no tokens yet)
 info "Setting up gh CLI config structure..."
 mkdir -p ~/.config/gh
 if [[ ! -f ~/.config/gh/hosts.yml ]]; then
-  cp "$DOTFILES_DIR/gh/hosts.yml.template" ~/.config/gh/hosts.yml
+  if [[ -f "$DOTFILES_DIR/gh/hosts.yml.template" ]]; then
+    cp "$DOTFILES_DIR/gh/hosts.yml.template" ~/.config/gh/hosts.yml
+  else
+    warn "  $DOTFILES_DIR/gh/hosts.yml.template not found — skipping hosts.yml setup."
+    warn "  Run 'gh auth login' manually for each account."
+  fi
 fi
 
 info ""
@@ -103,19 +182,35 @@ info ""
 
 # git.onsm.cloud (GHES)
 info "── Account 1/3: git.onsm.cloud (pratyush-sahay) ──"
-gh auth login --hostname git.onsm.cloud --git-protocol ssh --skip-ssh-key
+if gh_logged_in "git.onsm.cloud" "pratyush-sahay"; then
+  info "  Already authenticated — skipping."
+else
+  gh auth login --hostname git.onsm.cloud --git-protocol ssh --skip-ssh-key
+fi
 
 # github.com org account
 info "── Account 2/3: github.com (pratyush-sahay_enid — seeing-machines-emu) ──"
-gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key
+if gh_logged_in "github.com" "pratyush-sahay_enid"; then
+  info "  Already authenticated — skipping."
+else
+  gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key
+fi
 
 # github.com personal account
 info "── Account 3/3: github.com (aspratyush — personal) ──"
-gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key
+if gh_logged_in "github.com" "aspratyush"; then
+  info "  Already authenticated — skipping."
+else
+  gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key
+fi
 
 # Ensure the org account is the active github.com account
-info "Setting pratyush-sahay_enid as active github.com account..."
-gh auth switch --hostname github.com --user pratyush-sahay_enid
+if gh_logged_in "github.com" "pratyush-sahay_enid"; then
+  info "Setting pratyush-sahay_enid as active github.com account..."
+  gh auth switch --hostname github.com --user pratyush-sahay_enid
+else
+  warn "pratyush-sahay_enid not authenticated — skipping account switch."
+fi
 
 # ── 7. Mirror remote + post-merge hook ───────────────────────────────────────
 info "Configuring github.com mirror remote..."
@@ -127,9 +222,13 @@ else
 fi
 
 info "Installing post-merge hook..."
-chmod +x "$DOTFILES_DIR/git/hooks/post-merge"
-ln -sf "$DOTFILES_DIR/git/hooks/post-merge" "$DOTFILES_DIR/.git/hooks/post-merge"
-info "  Hook installed: .git/hooks/post-merge"
+if [[ -f "$DOTFILES_DIR/git/hooks/post-merge" ]]; then
+  chmod +x "$DOTFILES_DIR/git/hooks/post-merge"
+  ln -sf "$DOTFILES_DIR/git/hooks/post-merge" "$DOTFILES_DIR/.git/hooks/post-merge"
+  info "  Hook installed: .git/hooks/post-merge"
+else
+  warn "  $DOTFILES_DIR/git/hooks/post-merge not found — skipping hook install."
+fi
 
 info ""
 info "✅ Done! Verify with: gh auth status"
