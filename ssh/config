@@ -91,6 +91,10 @@ Host gpu-ext-5
   HostName mlcv-gpu-ext-5-act.sm.local
   User pratyush.sahay
 
+ Host desktop
+  HostName jkgnpt3u.sm.local
+  User pratyush.sahay
+ 
 # ── GitHub (personal account, separate SSH key) ───────────────────────────────
 Host github-aspratyush
   HostName github.com
