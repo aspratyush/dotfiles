@@ -143,6 +143,12 @@ if [[ ! -f ~/.bashrc.local ]]; then
   fi
 fi
 
+# ── 4b. Local bin scripts ─────────────────────────────────────────────────────
+info "Linking bin/post-pr-review..."
+mkdir -p "$HOME/.local/bin"
+ln -sf "$DOTFILES_DIR/bin/post-pr-review" "$HOME/.local/bin/post-pr-review"
+chmod +x "$DOTFILES_DIR/bin/post-pr-review"
+
 # ── 5. Copilot CLI config ─────────────────────────────────────────────────────
 info "Setting up ~/.copilot/config.json..."
 mkdir -p ~/.copilot

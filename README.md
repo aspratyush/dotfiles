@@ -12,6 +12,7 @@ Personal dev environment configuration and bootstrap for new machines.
 | `bash/.bashrc.local.template` | `~/.bashrc.local` (copied) | Machine-specific paths — **not committed** |
 | `gh/hosts.yml.template` | `~/.config/gh/hosts.yml` | 3-account gh CLI structure — no tokens |
 | `copilot/config.json.template` | `~/.copilot/config.json` (copied) | Preferences — no tokens |
+| `bin/post-pr-review` | `~/.local/bin/post-pr-review` (symlink) | Publishes an approved review Markdown file as a `gh pr review --comment`, appending an AI-assisted disclosure footer |
 | `bootstrap.sh` | run once on a new device | |
 
 ## Bootstrap a new device
@@ -29,8 +30,20 @@ The script will:
 2. Append `source ~/.bashrc_custom` to `~/.bashrc` (once)
 3. Copy `~/.bashrc.local` from template — **edit this with machine-specific paths**
 4. Install git-lfs hooks
-5. Copy Copilot CLI preferences (no tokens)
-6. Walk through `gh auth login` for all three accounts
+5. Symlink `~/.local/bin/post-pr-review`
+6. Copy Copilot CLI preferences (no tokens)
+7. Walk through `gh auth login` for all three accounts
+
+## Publishing an AI-assisted PR review
+
+Draft/iterate on a review as a local Markdown file (e.g. with Copilot CLI), then publish it deterministically once you're happy with it:
+
+```bash
+post-pr-review /tmp/pr-review.md          # infers the PR from the current branch
+post-pr-review /tmp/pr-review.md 123      # or target an explicit PR number/URL
+```
+
+The script appends a disclosure footer, shows a preview and the PR target, asks for a final `y/N` confirmation, then runs `gh pr review --comment --body-file ...`. No Copilot skill or instruction file is needed — just invoke the script directly (yourself, or by telling Copilot to run it).
 
 ## After bootstrap — manual steps
 

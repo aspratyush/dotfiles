@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# post-pr-review — publish an AI-assisted PR review Markdown file as a
+# GitHub PR comment review, appending a disclosure footer.
+#
+# Usage:
+#   post-pr-review REVIEW.md [PR_NUMBER_OR_URL]
+#
+# If PR_NUMBER_OR_URL is omitted, gh infers the PR from the current branch.
+set -Eeuo pipefail
+
+FOOTER='*AI-assisted review: GitHub Copilot assisted with analysis and drafting. The submitting reviewer remains responsible for validating this feedback.*'
+
+usage() {
+    echo "Usage: post-pr-review REVIEW.md [PR_NUMBER_OR_URL]" >&2
+    exit 2
+}
+
+[[ $# -ge 1 && $# -le 2 ]] || usage
+
+review_file="$1"
+pr="${2:-}"
+
+[[ -f "$review_file" ]] || {
+    echo "Review file not found: $review_file" >&2
+    exit 1
+}
+
+[[ -s "$review_file" ]] || {
+    echo "Review file is empty: $review_file" >&2
+    exit 1
+}
+
+command -v gh >/dev/null || {
+    echo "gh CLI is not installed." >&2
+    exit 1
+}
+
+gh auth status >/dev/null 2>&1 || {
+    echo "gh CLI is not authenticated." >&2
+    exit 1
+}
+
+tmp_file="$(mktemp)"
+trap 'rm -f "$tmp_file"' EXIT
+
+# Preserve the review while removing an existing exact copy of the footer.
+awk -v footer="$FOOTER" '$0 != footer' "$review_file" > "$tmp_file"
+
+# Remove trailing blank lines.
+sed -i ':a;/^[[:space:]]*$/{$d;N;ba}' "$tmp_file"
+
+cat >> "$tmp_file" <<EOF
+
+$FOOTER
+EOF
+
+echo "── Review to publish ──────────────────────────────────────────────"
+cat "$tmp_file"
+echo "────────────────────────────────────────────────────────────────────"
+
+if [[ -n "$pr" ]]; then
+    gh pr view "$pr" --json number,title,url \
+        --template '{{printf "Target: #%v %s\n%s\n" .number .title .url}}'
+else
+    gh pr view --json number,title,url \
+        --template '{{printf "Target: #%v %s\n%s\n" .number .title .url}}'
+fi
+
+echo
+read -r -p "Publish as a COMMENT review? [y/N] " answer
+
+case "$answer" in
+    y|Y|yes|YES)
+        ;;
+    *)
+        echo "Review not published."
+        exit 0
+        ;;
+esac
+
+if [[ -n "$pr" ]]; then
+    gh pr review "$pr" --comment --body-file "$tmp_file"
+else
+    gh pr review --comment --body-file "$tmp_file"
+fi
